@@ -1,17 +1,17 @@
 /* kernel.c */
 #include <stdint.h>
-
-#define _VGA_BUFFER 0xA0000
-#define _WIDTH 320
-#define _HEIGHT 200
+#include "graphics/vga.h"
 
 void _start() 
 {
-    volatile uint8_t *_VideoBuffer = (uint8_t*)_VGA_BUFFER;
+    Draw->Init();
     
-    for (uint32_t i = 0; i < _WIDTH * _HEIGHT; i++) {
-        _VideoBuffer[i] = 0x0F;
+    for (uint32_t I = 0; I < _WIDTH * _HEIGHT; I++) 
+    {
+        Draw->_FrameBuffer[I] = 0x0F;
     }
     
-    while(1) __asm__("hlt");
+    while(1) {
+        __asm__("hlt");
+    }
 }
