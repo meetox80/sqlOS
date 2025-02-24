@@ -16,7 +16,7 @@ typedef struct {
     void (*Init)(void);
     
     /* Shapes */
-    void (*Rectangle)(int X, int Y, int Width, int Height);
+    void (*Rectangle)(int X, int Y, int Width, int Height, unsigned char Color);
 
     /* Pixel Operations */
     void (*SetPixel)(int X, int Y, unsigned char Color);
