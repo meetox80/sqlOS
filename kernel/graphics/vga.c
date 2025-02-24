@@ -2,12 +2,15 @@
 #include "vga.h"
 #include <stddef.h>
 
+#include "shapes/rectangle.h"
+
 static Draw_t _DrawInstance = {
     ._FrameBuffer = NULL,
     .Init = Init,
     .SetPixel = SetPixel,
     .GetPixel = GetPixel,
-    .Rectangle = NULL
+    
+    .DrawRectangle = DrawRectangle
 };
 
 Draw_t* Draw = &_DrawInstance;

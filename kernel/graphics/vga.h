@@ -1,6 +1,6 @@
 /* graphics/vga.h */
-#ifndef GRAPHICS_H
-#define GRAPHICS_H
+#ifndef VGA_H
+#define VGA_H
 
 #include <stdint.h>
 
@@ -16,7 +16,7 @@ typedef struct {
     void (*Init)(void);
     
     /* Shapes */
-    void (*Rectangle)(int X, int Y, int Width, int Height, unsigned char Color);
+    void (*DrawRectangle)(int X, int Y, int Width, int Height, unsigned char Color);
 
     /* Pixel Operations */
     void (*SetPixel)(int X, int Y, unsigned char Color);
@@ -28,6 +28,6 @@ extern Draw_t* Draw;
 void Init(void);
 
 void SetPixel(int X, int Y, unsigned char Color);
-uint8_t GetPixel(int X, int Y);
+unsigned char GetPixel(int X, int Y);
 
 #endif
