@@ -1,3 +1,4 @@
+; /bootloader/bootloader.asm
 bits 16
 org 0x7C00
 
@@ -12,6 +13,12 @@ start:
 
     mov ax, 0x13
     int 0x10
+
+    ; TODO 1920x1080 24bpp XDDDDDDD
+    ; VBE Mode 0x4115 (1920×1080 24bpp)
+    ;mov ax, 0x4F02    ; VBE Set Mode
+    ;mov bx, 0x4115    | 0x4000 ; Mode number + LFB
+    ;int 0x10
 
     mov bx, KERNEL_OFFSET
     mov ah, 0x02
