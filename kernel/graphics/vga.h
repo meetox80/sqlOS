@@ -4,30 +4,31 @@
 
 #include <stdint.h>
 
-#define _VGA_BUFFER 0xA0000
-#define _WIDTH      320
-#define _HEIGHT     200
+#define _VGA_BUFFER_VBE 0xFD000000
+#define _VGA_BUFFER_STD 0xA0000
+#define _WIDTH_VBE      640
+#define _HEIGHT_VBE     480
+#define _WIDTH_STD      320
+#define _HEIGHT_STD     200
 
 typedef struct {
-    /* Values */
     volatile uint8_t *_FrameBuffer;
+    int _Width;
+    int _Height;
+    int _BytesPerPixel;
 
-    /* Functions */
     void (*Init)(void);
     
-    /* Shapes */
-    void (*DrawRectangle)(int X, int Y, int Width, int Height, unsigned char Color);
+    void (*DrawRectangle)(int X, int Y, int Width, int Height, uint32_t Color);
 
-    /* Pixel Operations */
-    void (*SetPixel)(int X, int Y, unsigned char Color);
-    unsigned char (*GetPixel)(int X, int Y);
+    void (*SetPixel)(int X, int Y, uint32_t Color);
+    uint32_t (*GetPixel)(int X, int Y);
 } Draw_t;
 
 extern Draw_t* Draw;
 
 void Init(void);
-
-void SetPixel(int X, int Y, unsigned char Color);
-unsigned char GetPixel(int X, int Y);
+void SetPixel(int X, int Y, uint32_t Color);
+uint32_t GetPixel(int X, int Y);
 
 #endif

@@ -11,15 +11,32 @@ start:
     mov ss, ax
     mov sp, 0x7C00
 
+    ; Get VBE mode info first
+    mov ax, 0x4F01
+    mov cx, 0x112
+    mov di, mode_info
+    int 0x10
+    
+    cmp ax, 0x004F
+    jne vbe_fallback
+    
+    ; Set VBE mode 0x112 with LFB
+    mov ax, 0x4F02
+    mov bx, 0x4112
+    int 0x10
+    
+    cmp al, 0x4F
+    jne vbe_fallback
+    cmp ah, 0x00
+    jne vbe_fallback
+    
+    jmp load_kernel
+
+vbe_fallback:
     mov ax, 0x13
     int 0x10
 
-    ; TODO 1920x1080 24bpp XDDDDDDD
-    ; VBE Mode 0x4115 (1920×1080 24bpp)
-    ;mov ax, 0x4F02    ; VBE Set Mode
-    ;mov bx, 0x4115    | 0x4000 ; Mode number + LFB
-    ;int 0x10
-
+load_kernel:
     mov bx, KERNEL_OFFSET
     mov ah, 0x02
     mov al, 32
@@ -69,6 +86,9 @@ gdt_desc:
     dd gdt
 
 error_msg db "BOOT ERR",0
+
+mode_info:
+    times 256 db 0
 
 times 510-($-$$) db 0
 dw 0xAA55

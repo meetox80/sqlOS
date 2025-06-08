@@ -1,40 +1,67 @@
-CC          := x86_64-elf-gcc
+ifeq ($(OS),Windows_NT)
+    DETECTED_OS := Windows
+    TOOLPREFIX  := x86_64-elf-
+    RM          := del /Q
+    FIND        := dir /S /B 
+    DD          := dd
+    QEMU        := qemu-system-i386
+    CLEANUP     := cleanup.bat
+    PATH_SEP    := \\
+    EXEC_CLEANUP := if exist $(CLEANUP) call $(CLEANUP)
+else
+    DETECTED_OS := $(shell uname -s)
+    TOOLPREFIX  := x86_64-elf-
+    RM          := rm -f
+    FIND        := find
+    DD          := dd
+    QEMU        := qemu-system-i386
+    CLEANUP     := cleanup.sh
+    PATH_SEP    := /
+    EXEC_CLEANUP := if [ -f $(CLEANUP) ]; then bash $(CLEANUP); fi
+endif
+
+CC          := $(TOOLPREFIX)gcc
 ASM         := nasm
-LD          := x86_64-elf-ld
-OBJCOPY     := x86_64-elf-objcopy
+LD          := $(TOOLPREFIX)ld
+OBJCOPY     := $(TOOLPREFIX)objcopy
 DISK_IMG    := sqlOS.img
 
 CFLAGS      := -m32 -ffreestanding -nostdlib -Wall -Wextra
 LDFLAGS     := -melf_i386 -nostdlib -T linker.ld
 
-C_SOURCES   := $(shell find kernel -name '*.c')
-C_OBJECTS   := $(C_SOURCES:.c=.o)
+ifeq ($(DETECTED_OS),Windows)
+    C_SOURCES  := $(shell $(FIND) kernel /C "*.c" | findstr /R "\.c$$")
+    C_OBJECTS  := $(patsubst %.c,%.o,$(C_SOURCES))
+else
+    C_SOURCES  := $(shell $(FIND) kernel -name '*.c')
+    C_OBJECTS  := $(C_SOURCES:.c=.o)
+endif
 
 .PHONY: all run clean
 
 all: disk
 
-bootloader/bootloader.bin: bootloader/bootloader.asm
+bootloader$(PATH_SEP)bootloader.bin: bootloader$(PATH_SEP)bootloader.asm
 	$(ASM) -f bin $< -o $@
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-kernel/kernel.elf: $(C_OBJECTS)
+kernel$(PATH_SEP)kernel.elf: $(C_OBJECTS)
 	$(LD) $(LDFLAGS) $(C_OBJECTS) -o $@
 
-kernel/kernel.bin: kernel/kernel.elf
+kernel$(PATH_SEP)kernel.bin: kernel$(PATH_SEP)kernel.elf
 	$(OBJCOPY) -O binary $< $@
 
-disk: bootloader/bootloader.bin kernel/kernel.bin
-	dd if=/dev/zero of=$(DISK_IMG) bs=512 count=2880
-	dd if=bootloader/bootloader.bin of=$(DISK_IMG) conv=notrunc
-	dd if=kernel/kernel.bin of=$(DISK_IMG) bs=512 seek=1 conv=notrunc
+disk: bootloader$(PATH_SEP)bootloader.bin kernel$(PATH_SEP)kernel.bin
+	$(DD) if=/dev/zero of=$(DISK_IMG) bs=512 count=2880
+	$(DD) if=bootloader$(PATH_SEP)bootloader.bin of=$(DISK_IMG) conv=notrunc
+	$(DD) if=kernel$(PATH_SEP)kernel.bin of=$(DISK_IMG) bs=512 seek=1 conv=notrunc
 
 run: 
-	@if [ -f cleanup.sh ]; then bash cleanup.sh; fi
+	@$(EXEC_CLEANUP)
 	$(MAKE) disk
-	qemu-system-i386 -drive format=raw,file=$(DISK_IMG)
+	$(QEMU) -drive format=raw,file=$(DISK_IMG)
 
 clean:
-	rm -f $(C_OBJECTS) bootloader/bootloader.bin kernel/kernel.* $(DISK_IMG)
+	$(RM) $(C_OBJECTS) bootloader$(PATH_SEP)bootloader.bin kernel$(PATH_SEP)kernel.* $(DISK_IMG)
