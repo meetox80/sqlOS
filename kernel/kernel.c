@@ -1,4 +1,3 @@
-/* kernel.c */
 #include <stdint.h>
 #include "graphics/vga.h"
 
@@ -6,59 +5,75 @@ void _start()
 {
     Draw->Init();
     
-    if (Draw->_BytesPerPixel == 1) {
-        const int COLORS_PER_ROW = 16;
-        const int COLORS_PER_COL = 16;
-        const int CELL_WIDTH = Draw->_Width / COLORS_PER_ROW;
-        const int CELL_HEIGHT = Draw->_Height / COLORS_PER_COL;
-        
-        for (int Row = 0; Row < COLORS_PER_COL; Row++) {
-            for (int Col = 0; Col < COLORS_PER_ROW; Col++) {
-                const int X = Col * CELL_WIDTH;
-                const int Y = Row * CELL_HEIGHT;
+    const int _CenterX = 320;
+    const int _CenterY = 240;
+    const int _Radius = 100;
+    
+    for (int Y = _CenterY - _Radius; Y <= _CenterY + _Radius; Y++) {
+        for (int X = _CenterX - _Radius; X <= _CenterX + _Radius; X++) {
+            int _Dx = X - _CenterX;
+            int _Dy = Y - _CenterY;
+            int _DistanceSquared = _Dx * _Dx + _Dy * _Dy;
+            int _RadiusSquared = _Radius * _Radius;
+            
+            if (_DistanceSquared <= _RadiusSquared) {
+                if (_Dx == 0 && _Dy == 0) {
+                    Draw->SetPixel(X, Y, 0xFFFFFF);
+                    continue;
+                }
+
+                int _Hue;
+
+                if (_Dy >= 0) {
+                    if (_Dx >= 0) {
+                        if (_Dx >= _Dy) {
+                            _Hue = (_Dy * 45) / _Dx;
+                        } else {
+                            _Hue = 90 - ((_Dx * 45) / _Dy);
+                        }
+                    } else {
+                        if (-_Dx < _Dy) {
+                            _Hue = 90 + ((-_Dx * 45) / _Dy);
+                        } else {
+                            _Hue = 180 - ((_Dy * 45) / -_Dx);
+                        }
+                    }
+                } else {
+                    if (_Dx < 0) {
+                        if (-_Dx >= -_Dy) {
+                            _Hue = 180 + ((-_Dy * 45) / -_Dx);
+                        } else {
+                            _Hue = 270 - ((-_Dx * 45) / -_Dy);
+                        }
+                    } else {
+                        if (_Dx < -_Dy) {
+                             _Hue = 270 + ((_Dx * 45) / -_Dy);
+                        } else {
+                             _Hue = 360 - ((-_Dy * 45) / _Dx);
+                        }
+                    }
+                }
                 
-                uint8_t Color = Row * COLORS_PER_ROW + Col;
+                if (_Hue >= 360) _Hue = 359;
                 
-                Draw->DrawRectangle(
-                    X,
-                    Y,
-                    CELL_WIDTH,
-                    CELL_HEIGHT,
-                    Color
-                );
-            }
-        }
-    } else {
-        const int COLORS_PER_ROW = 64;
-        const int COLORS_PER_COL = 48;
-        const int CELL_WIDTH = Draw->_Width / COLORS_PER_ROW;
-        const int CELL_HEIGHT = Draw->_Height / COLORS_PER_COL;
-        
-        for (int Row = 0; Row < COLORS_PER_COL; Row++) {
-            for (int Col = 0; Col < COLORS_PER_ROW; Col++) {
-                const int X = Col * CELL_WIDTH;
-                const int Y = Row * CELL_HEIGHT;
+                int _R, _G, _B;
+                int _Hi = _Hue / 60;
+                int _Remainder = _Hue % 60;
+                int _T = (_Remainder * 255) / 60;
+                int _Q = 255 - _T;
+                int _P = 0;
                 
-                float _NormalizedX = (float)Col / (COLORS_PER_ROW - 1);
-                float _NormalizedY = (float)Row / (COLORS_PER_COL - 1);
+                switch(_Hi) {
+                    case 0: _R = 255; _G = _T; _B = _P; break;
+                    case 1: _R = _Q; _G = 255; _B = _P; break;
+                    case 2: _R = _P; _G = 255; _B = _T; break;
+                    case 3: _R = _P; _G = _Q; _B = 255; break;
+                    case 4: _R = _T; _G = _P; _B = 255; break;
+                    case 5: _R = 255; _G = _P; _B = _Q; break;
+                }
                 
-                uint32_t Red = (uint32_t)(255 * _NormalizedX);
-                uint32_t Green = (uint32_t)(255 * (1.0f - _NormalizedY));
-                uint32_t Blue = (uint32_t)(255 * (_NormalizedX + _NormalizedY) / 2.0f);
-                
-                if (Red > 255) Red = 255;
-                if (Green > 255) Green = 255;
-                if (Blue > 255) Blue = 255;
-                
-                uint32_t Color = (Red << 16) | (Green << 8) | Blue;
-                
-                Draw->DrawRectangle(
-                    X,
-                    Y,
-                    CELL_WIDTH,
-                    CELL_HEIGHT,
-                    Color
-                );
+                uint32_t _Color = (_R << 16) | (_G << 8) | _B;
+                Draw->SetPixel(X, Y, _Color);
             }
         }
     }
